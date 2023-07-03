@@ -1,71 +1,34 @@
-name: "Upload GitHub Pages artifact"
-description: "A composite action that prepares your static assets to be deployed to GitHub Pages"
-author: "GitHub"
+name: 'Deploy GitHub Pages site'
+description: 'A GitHub Action to deploy an artifact as a GitHub Pages site'
+author: 'GitHub'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
 inputs:
-  name:
-    description: 'Artifact name'
+  token:
+    description: 'GitHub token'
+    default: ${{ github.token }}
+    required: true
+  timeout:
+    description: 'Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes)'
+    required: false
+    default: '600000'
+  error_count:
+    description: 'Maximum number of status report errors before cancelling a deployment (default: 10)'
+    required: false
+    default: '10'
+  reporting_interval:
+    description: 'Time in milliseconds between two deployment status report (default: 5 seconds)'
+    required: false
+    default: '5000'
+  artifact_name:
+    description: 'Name of the artifact to deploy'
     required: false
     default: 'github-pages'
-  path:
-    description: "Path of the directory containing the static assets."
-    required: true
-    default: "_site/"
-  retention-days:
-    description: "Duration after which artifact will expire in days."
+  preview:
+    description: 'Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!)'
     required: false
-    default: "1"
-runs:
-  using: composite
-  steps:
-    - name: Archive artifact
-      shell: sh
-      if: runner.os == 'Linux'
-      run: |
-        tar \
-          --dereference --hard-dereference \
-          --directory "$INPUT_PATH" \
-          -cvf "$RUNNER_TEMP/artifact.tar" \
-          --exclude=.git \
-          --exclude=.github \
-          .
-      env:
-        INPUT_PATH: ${{ inputs.path }}
-
-    # Switch to gtar (GNU tar instead of bsdtar which is the default in the MacOS runners so we can use --hard-dereference)
-    - name: Archive artifact
-      shell: sh
-      if: runner.os == 'macOS'
-      run: |
-        gtar \
-          --dereference --hard-dereference \
-          --directory "$INPUT_PATH" \
-          -cvf "$RUNNER_TEMP/artifact.tar" \
-          --exclude=.git \
-          --exclude=.github \
-          .
-      env:
-        INPUT_PATH: ${{ inputs.path }}
-
-    # Massage the paths for Windows only
-    - name: Archive artifact
-      shell: bash
-      if: runner.os == 'Windows'
-      run: |
-        tar \
-          --dereference --hard-dereference \
-          --directory "$INPUT_PATH" \
-          -cvf "$RUNNER_TEMP\artifact.tar" \
-          --exclude=.git \
-          --exclude=.github \
-          --force-local \
-          "."
-      env:
-        INPUT_PATH: ${{ inputs.path }}
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ inputs.name }}
-        path: ${{ runner.temp }}/artifact.tar
-        retention-days: ${{ inputs.retention-days }}
-        if-no-files-found: error
+    default: 'false'
+outputs:
+  page_url:
+    description: 'URL to deployed GitHub Pages'
