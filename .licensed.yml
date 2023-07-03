@@ -12,3 +12,5 @@ allowed:
 
 reviewed:
   npm:
+- name: Checkout
+  uses: actions/checkout@v3.5.3
